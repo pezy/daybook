@@ -41,8 +41,11 @@ Daybook CLI是一个面向程序员的AI日记CLI工具，帮助用户通过智�
    # Start Ollama service
    ollama serve
 
-   # Pull recommended model
-   ollama pull qwen2.5:3b
+   # Pull recommended default model
+   ollama pull gemma3:270m
+
+   # Optional: Pull larger model for better quality
+   # ollama pull qwen2.5:3b
    ```
 
 ## Development Setup
@@ -368,7 +371,7 @@ from pydantic import BaseModel
 class UserSettings(BaseModel):
     daybook_path: str
     timezone: str = "UTC"
-    ai_model: str = "qwen2.5:3b"
+    ai_model: str = "gemma3:270m"
     reminder_enabled: bool = True
     reminder_time: str = "23:00"
 
@@ -435,9 +438,9 @@ class JournalService:
             f.write(f"{entry.content}\n")
 ```
 
-### Step 4: AI Integration
+### Step 4: AI Integration (Question-Only)
 
-Implement AI service integration:
+Implement AI service integration - Focus on question generation only:
 
 ```python
 # src/daybook/core/ai_service.py
@@ -463,8 +466,8 @@ class AIService:
             return False
 
     async def generate_question(self, context: QuestionContext) -> GeneratedQuestion:
-        """Generate a personalized question"""
-        prompt = self._build_prompt(context)
+        """Generate a personalized question - AI Agent asks, doesn't answer"""
+        prompt = self._build_question_prompt(context)
 
         response = await self.client.post(
             "/api/generate",
@@ -489,10 +492,10 @@ class AIService:
             generation_prompt=prompt
         )
 
-    def _build_prompt(self, context: QuestionContext) -> str:
-        """Build AI prompt from context"""
+    def _build_question_prompt(self, context: QuestionContext) -> str:
+        """Build AI prompt - Focus on asking questions only"""
         prompt = f"""
-Based on the following journal entries and memories, generate one thoughtful question for personal reflection:
+You are a personal growth companion that asks thoughtful questions. Based on the user's data, generate ONE thought-provoking question.
 
 Today's entries:
 {chr(10).join([f"- {entry.content}" for entry in context.today_entries])}
@@ -500,9 +503,22 @@ Today's entries:
 Relevant memories:
 {chr(10).join([f"- {memory.content}" for memory in context.recent_memories])}
 
-Generate one specific, thought-provoking question that helps the user reflect on their day and personal growth.
+Yesterday's user responses (important context):
+{chr(10).join([f"- {response.content}" for response in context.yesterday_responses])}
+
+Requirements:
+1. Ask ONLY ONE question - do not provide answers or advice
+2. Focus on areas: learning, health, relationships, goals, habits
+3. Make it specific and thought-provoking
+4. Reference yesterday's responses when relevant
+5. Encourage deep reflection, not surface-level responses
+
+Question:
 """
         return prompt.strip()
+
+    # Note: AI Agent only asks questions, never provides answers
+    # Users provide their own answers, which become context for future questions
 ```
 
 ## Testing Examples
@@ -560,7 +576,7 @@ class TestAIServiceIntegration:
         return UserSettings(
             daybook_path="/tmp/test",
             ai_base_url="http://localhost:11434",
-            ai_model="qwen2.5:3b"
+            ai_model="gemma3:270m"
         )
 
     @pytest.fixture
@@ -593,7 +609,7 @@ class TestAIServiceIntegration:
         try:
             question = await ai_service.generate_question(context)
             assert len(question.question) > 0
-            assert question.model_used == "qwen2.5:3b"
+            assert question.model_used == "gemma3:270m"
         except Exception as e:
             pytest.skip(f"AI service not available: {e}")
 ```
@@ -611,7 +627,7 @@ class TestAIServiceIntegration:
    ollama serve
 
    # Check model availability
-   ollama pull qwen2.5:3b
+   ollama pull gemma3:270m
    ```
 
 2. **Configuration File Not Found**

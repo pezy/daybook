@@ -20,10 +20,10 @@ from datetime import time
 from enum import Enum
 
 class AIModel(str, Enum):
+    GEMMA3_270M = "gemma3:270m"
     QWEN2_3B = "qwen2.5:3b"
     QWEN2_7B = "qwen2.5:7b"
     PHI3_MINI = "phi3:mini"
-    GEMMA2_2B = "gemma2:2b"
 
 class UserSettings(BaseModel):
     """用户配置模型"""
@@ -32,7 +32,7 @@ class UserSettings(BaseModel):
     timezone: str = Field(default="UTC", description="时区设置")
 
     # AI配置
-    ai_model: AIModel = Field(default=AIModel.QWEN2_3B, description="默认AI模型")
+    ai_model: AIModel = Field(default=AIModel.GEMMA3_270M, description="默认AI模型")
     ai_temperature: float = Field(default=0.7, ge=0.0, le=1.0, description="AI创造性参数")
     ai_max_tokens: int = Field(default=500, ge=100, le=2000, description="AI最大生成token数")
 
@@ -62,14 +62,14 @@ class AIServiceConfig(BaseModel):
 **File**: `journals/YYYY-MM-DD.md`
 
 ```python
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional, List
 from enum import Enum
 
 class EntryType(str, Enum):
     LOG = "log"           # 用户日志
     AI_QUESTION = "ai_q"  # AI问题
-    AI_ANSWER = "ai_a"    # AI回答
+    USER_RESPONSE = "user_r"  # 用户回答
     MEMORY = "memory"     # 记忆添加
     SYSTEM = "system"     # 系统信息
 
@@ -104,21 +104,28 @@ class DailyJournal(BaseModel):
         return self.get_entries_by_type(EntryType.LOG)
 
     def get_ai_conversations(self) -> List[tuple]:
-        """获取AI对话"""
+        """获取AI对话（问题+用户回答）"""
         conversations = []
         questions = self.get_entries_by_type(EntryType.AI_QUESTION)
 
         for question in questions:
-            # 查找对应的回答
-            answers = [
+            # 查找对应的用户回答
+            responses = [
                 e for e in self.entries
-                if e.entry_type == EntryType.AI_ANSWER and
+                if e.entry_type == EntryType.USER_RESPONSE and
                 e.timestamp > question.timestamp
             ]
-            if answers:
-                conversations.append((question, answers[0]))
+            if responses:
+                conversations.append((question, responses[0]))
 
         return conversations
+
+    def get_yesterday_responses(self) -> List[JournalEntry]:
+        """获取昨天的用户回答（用于今日问题生成）"""
+        yesterday = (self.date - timedelta(days=1)).strftime("%Y-%m-%d")
+        # 这里需要实现跨文件查询的逻辑
+        # 简化实现：返回当天的用户回答类型条目
+        return self.get_entries_by_type(EntryType.USER_RESPONSE)
 ```
 
 ### 3. Long-term Memory (长期记忆)
@@ -230,6 +237,7 @@ class QuestionContext(BaseModel):
     current_date: datetime = Field(..., description="当前日期")
     today_entries: List[JournalEntry] = Field(..., description="今日条目")
     recent_memories: List[Memory] = Field(..., description="相关记忆")
+    yesterday_responses: List[JournalEntry] = Field(..., description="昨日用户回答（重要参考）")
     user_preferences: Dict[str, Any] = Field(default_factory=dict, description="用户偏好")
 
     # 统计信息
@@ -412,7 +420,7 @@ date_format = "%Y-%m-%d"
 time_format = "%H:%M:%S"
 
 [ai]
-model = "qwen2.5:3b"
+model = "gemma3:270m"
 temperature = 0.7
 max_tokens = 500
 base_url = "http://localhost:11434"
@@ -448,8 +456,8 @@ encryption_enabled = false
 基于你今天记录的学习经历，你觉得Rust与其他编程语言相比有什么优势？
 
 ## 20:16:12
-### AI Answer
-根据你今天的学习体验，Rust的主要优势包括：1. 内存安全保证，2. 高性能，3. 强大的类型系统。这些特点虽然增加了学习曲线，但长期来看会提高代码质量。
+### User Response
+我认为Rust的主要优势是内存安全和性能，但学习曲线确实比较陡峭。需要更多练习来掌握所有权概念。
 
 ## 23:00:00
 ### Daily Reflection

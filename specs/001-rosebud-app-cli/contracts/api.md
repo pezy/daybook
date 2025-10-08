@@ -91,8 +91,8 @@ class InitCommandSpec:
         "model": {
             "type": "string",
             "required": False,
-            "default": "qwen2.5:3b",
-            "enum": ["qwen2.5:3b", "qwen2.5:7b", "phi3:mini", "gemma2:2b"],
+            "default": "gemma3:270m",
+            "enum": ["gemma3:270m", "qwen2.5:3b", "qwen2.5:7b", "phi3:mini"],
             "description": "默认AI模型"
         },
         "reminder_time": {
@@ -329,7 +329,7 @@ from abc import ABC, abstractmethod
 from typing import List, Dict, Any
 
 class AIServiceInterface(ABC):
-    """AI服务接口合约"""
+    """AI服务接口合约 - 专注于问题生成"""
 
     @abstractmethod
     async def health_check(self) -> bool:
@@ -342,17 +342,11 @@ class AIServiceInterface(ABC):
         context: QuestionContext,
         question_count: int = 1
     ) -> List[GeneratedQuestion]:
-        """生成个性化问题"""
+        """生成个性化问题（AI Agent核心功能）"""
         pass
 
-    @abstractmethod
-    async def generate_response(
-        self,
-        question: str,
-        context: QuestionContext
-    ) -> str:
-        """生成AI回答"""
-        pass
+    # 注意：AI Agent只问问题，不提供回答
+    # 用户回答由用户自己提供，用于后续问题生成的上下文
 
     @abstractmethod
     async def list_available_models(self) -> List[str]:
@@ -370,12 +364,14 @@ class AIServiceContract:
         "max_retry_attempts": 3
     }
 
-    # 质量要求
+    # 质量要求 - 专注于问题生成
     QUALITY_REQUIREMENTS = {
-        "question_relevance_threshold": 0.7,  # 相关性阈值
-        "min_question_length": 10,  # 最短问题长度
+        "question_relevance_threshold": 0.8,  # 相关性阈值（更高要求）
+        "min_question_length": 15,  # 最短问题长度
         "max_question_length": 200,  # 最长问题长度
-        "forbidden_content": ["敏感话题", "违法内容"]  # 禁止内容
+        "question_depth_requirement": "引导性",  # 问题必须具有引导思考的特性
+        "context_usage_weight": 0.7,  # 上下文权重（昨日回答重要）
+        "forbidden_content": ["敏感话题", "违法内容", "提供直接答案"]  # 禁止内容
     }
 
     # 错误处理
@@ -758,7 +754,7 @@ class MockAIService(AIServiceInterface, TestableInterface):
 
     def get_test_data(self) -> Dict[str, Any]:
         return {
-            "available_models": ["qwen2.5:3b", "phi3:mini"],
+            "available_models": ["gemma3:270m", "qwen2.5:3b", "phi3:mini"],
             "mock_questions": [
                 "你今天学到了什么新知识？",
                 "今天的经历给你什么启发？"

@@ -44,7 +44,7 @@
 ```python
 # 核心AI服务架构
 class AIService:
-    def __init__(self, model: str = "qwen2.5:3b"):
+    def __init__(self, model: str = "gemma3:270m"):
         self.client = httpx.AsyncClient()
         self.model = model
         self.health_checker = HealthChecker()
@@ -59,9 +59,9 @@ class AIService:
 ```
 
 **Model Recommendations**:
-- **Primary**: Qwen2.5:3b (平衡性能和资源消耗)
-- **Upgrade**: Qwen2.5:7b (更好的问题质量)
-- **Lightweight**: Phi3:mini (资源受限环境)
+- **Primary**: Gemma3:270m (默认选择，体积最小，运行效率高)
+- **Upgrade**: Qwen2.5:3b (更好的中文支持和问题质量)
+- **Alternative**: Phi3:mini (备选选择，快速的推理能力)
 
 ### 3. 数据存储架构
 
@@ -402,5 +402,6 @@ docs/                          # 文档
 
 **推荐技术栈**: Python 3.11+ + Typer + Ollama + 文件存储
 **项目管理**: uv 项目管理和依赖管理
+**AI定位**: 只问问题，不提供回答（专注激发用户思考）
 **预期开发周期**: 4-6周 (MVP)
 **团队规模**: 1-2名开发者
