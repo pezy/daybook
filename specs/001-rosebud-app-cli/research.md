@@ -285,37 +285,68 @@ class TestCLIWorkflow:
 ## Technology Stack Summary
 
 ### Core Dependencies
-```python
-# CLI Framework
-typer>=0.9.0          # 现代CLI框架，基于类型提示
+```toml
+# pyproject.toml
+[project]
+dependencies = [
+    # CLI Framework
+    "typer>=0.9.0",        # 现代CLI框架，基于类型提示
 
-# Configuration
-toml>=0.10.2          # TOML配置文件解析
-pydantic>=2.0.0       # 数据验证和设置管理
+    # Configuration
+    "toml>=0.10.2",        # TOML配置文件解析
+    "pydantic>=2.0.0",     # 数据验证和设置管理
 
-# AI Integration
-httpx>=0.25.0         # 异步HTTP客户端
-ollama>=0.6.0         # Ollama Python客户端
+    # AI Integration
+    "httpx>=0.25.0",       # 异步HTTP客户端
+    "ollama>=0.6.0",       # Ollama Python客户端
 
-# Task Scheduling
-apscheduler>=3.10.0   # 任务调度框架
+    # Task Scheduling
+    "apscheduler>=3.10.0", # 任务调度框架
 
-# Data Processing
-pytz>=2023.3          # 时区处理
-python-dateutil>=2.8.0 # 日期工具
+    # Data Processing
+    "pytz>=2023.3",        # 时区处理
+    "python-dateutil>=2.8.0", # 日期工具
 
-# Security (Optional)
-cryptography>=41.0.0  # 数据加密
+    # Security (Optional)
+    "cryptography>=41.0.0", # 数据加密
+]
 
-# Testing
-pytest>=7.4.0        # 测试框架
-pytest-asyncio>=0.21.0 # 异步测试支持
-pytest-cov>=4.1.0    # 测试覆盖率
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",      # 测试框架
+    "pytest-asyncio>=0.21.0", # 异步测试支持
+    "pytest-cov>=4.1.0",  # 测试覆盖率
+    "black>=23.0.0",       # 代码格式化
+    "mypy>=1.5.0",         # 类型检查
+    "pre-commit>=3.3.0",   # Git钩子
+]
 
-# Development
-black>=23.0.0         # 代码格式化
-mypy>=1.5.0           # 类型检查
-pre-commit>=3.3.0     # Git钩子
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project.scripts]
+daybook = "daybook.cli.main:app"
+```
+
+### UV 项目管理
+```bash
+# 项目初始化
+uv init daybook
+cd daybook
+
+# 添加依赖
+uv add typer toml pydantic httpx ollama apscheduler pytz python-dateutil
+
+# 添加开发依赖
+uv add --dev pytest pytest-asyncio pytest-cov black mypy pre-commit
+
+# 运行项目
+uv run daybook --help
+
+# 构建和发布
+uv build
+uv publish --token pypi-xxxx
 ```
 
 ### Project Structure
@@ -370,5 +401,6 @@ docs/                          # 文档
 本研究为CLI日记工具提供了完整的技术方案，选择Python生态系统在满足功能需求的同时保持了开发的简洁性和效率。方案充分考虑了跨平台兼容性、性能优化和用户体验，为后续的开发实现奠定了坚实基础。
 
 **推荐技术栈**: Python 3.11+ + Typer + Ollama + 文件存储
+**项目管理**: uv 项目管理和依赖管理
 **预期开发周期**: 4-6周 (MVP)
 **团队规模**: 1-2名开发者

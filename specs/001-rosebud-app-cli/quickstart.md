@@ -19,15 +19,13 @@ Daybook CLI是一个面向程序员的AI日记CLI工具，帮助用户通过智�
 
 ### Required Software
 
-1. **Python 3.11+**
+1. **uv (Python Package Manager)**
    ```bash
-   # Verify Python version
-   python --version
+   # Install uv
+   curl -LsSf https://astral.sh/uv/install.sh | sh
 
-   # Install Python (if needed)
-   # Ubuntu/Debian: sudo apt update && sudo apt install python3.11
-   # macOS: brew install python@3.11
-   # Windows: Download from python.org
+   # Verify installation
+   uv --version
    ```
 
 2. **Git**
@@ -56,43 +54,45 @@ git clone <repository-url>
 cd daybook
 ```
 
-### 2. Create Virtual Environment
+### 2. Initialize Project with uv
 
 ```bash
-# Create virtual environment
-python -m venv venv
+# Initialize project
+uv init daybook
+cd daybook
 
-# Activate virtual environment
-# Linux/macOS:
-source venv/bin/activate
-# Windows:
-venv\Scripts\activate
+# Set up project structure
+mkdir -p src/daybook/{cli,core,models,utils,config}
+mkdir -p tests/{unit,integration,e2e}
 
-# Verify activation
-which python  # should show venv path
+# Create pyproject.toml with project configuration
+# (see research.md for complete configuration)
 ```
 
 ### 3. Install Dependencies
 
 ```bash
-# Install development dependencies
-pip install -r requirements-dev.txt
+# Add core dependencies
+uv add typer toml pydantic httpx ollama apscheduler pytz python-dateutil cryptography
 
-# Install package in development mode
-pip install -e .
+# Add development dependencies
+uv add --dev pytest pytest-asyncio pytest-cov black mypy pre-commit isort flake8
+
+# Install in development mode
+uv pip install -e .
 ```
 
 ### 4. Verify Installation
 
 ```bash
 # Test basic functionality
-daybook --help
+uv run daybook --help
 
 # Check AI service connection
-daybook check-ai
+uv run daybook check-ai
 
 # Verify all dependencies
-python -m pytest tests/test_setup.py -v
+uv run pytest tests/test_setup.py -v
 ```
 
 ## Project Structure
@@ -133,59 +133,20 @@ daybook/
 │   ├── integration/            # Integration tests
 │   └── e2e/                   # End-to-end tests
 ├── docs/                      # Documentation
-├── requirements.txt           # Runtime dependencies
-├── requirements-dev.txt       # Development dependencies
 ├── pyproject.toml            # Project configuration
 ├── README.md                 # Project README
-└── .gitignore               # Git ignore file
+├── .gitignore               # Git ignore file
+└── uv.lock                  # Dependency lock file
 ```
 
 ## Configuration Files
-
-### requirements.txt
-
-```txt
-# Core dependencies
-typer>=0.9.0
-pydantic>=2.0.0
-toml>=0.10.2
-httpx>=0.25.0
-ollama>=0.6.0
-apscheduler>=3.10.0
-pytz>=2023.3
-python-dateutil>=2.8.0
-
-# Optional dependencies
-cryptography>=41.0.0  # For encryption support
-```
-
-### requirements-dev.txt
-
-```txt
-# Include runtime dependencies
--r requirements.txt
-
-# Development tools
-pytest>=7.4.0
-pytest-asyncio>=0.21.0
-pytest-cov>=4.1.0
-black>=23.0.0
-mypy>=1.5.0
-pre-commit>=3.3.0
-isort>=5.12.0
-flake8>=6.0.0
-
-# Documentation
-mkdocs>=1.5.0
-mkdocs-material>=9.2.0
-```
 
 ### pyproject.toml
 
 ```toml
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "daybook"
@@ -204,6 +165,30 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 
+dependencies = [
+    "typer>=0.9.0",
+    "pydantic>=2.0.0",
+    "toml>=0.10.2",
+    "httpx>=0.25.0",
+    "ollama>=0.6.0",
+    "apscheduler>=3.10.0",
+    "pytz>=2023.3",
+    "python-dateutil>=2.8.0",
+    "cryptography>=41.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+    "black>=23.0.0",
+    "mypy>=1.5.0",
+    "pre-commit>=3.3.0",
+    "isort>=5.12.0",
+    "flake8>=6.0.0",
+]
+
 [project.scripts]
 daybook = "daybook.cli.main:app"
 
@@ -211,9 +196,6 @@ daybook = "daybook.cli.main:app"
 Homepage = "https://github.com/yourusername/daybook"
 Repository = "https://github.com/yourusername/daybook"
 Documentation = "https://daybook.readthedocs.io"
-
-[tool.setuptools.packages.find]
-where = ["src"]
 
 [tool.black]
 line-length = 88
@@ -257,25 +239,25 @@ exclude_lines = [
 git checkout -b feature/<feature-name>
 
 # Run tests before starting
-python -m pytest
+uv run pytest
 
 # Make changes
 # ...
 
 # Run tests frequently
-python -m pytest tests/unit/ -v
+uv run pytest tests/unit/ -v
 
 # Run integration tests
-python -m pytest tests/integration/ -v
+uv run pytest tests/integration/ -v
 
 # Check code quality
-black src/ tests/
-isort src/ tests/
-mypy src/
-flake8 src/
+uv run black src/ tests/
+uv run isort src/ tests/
+uv run mypy src/
+uv run flake8 src/
 
 # Run full test suite
-python -m pytest
+uv run pytest
 
 # Commit changes
 git add .
@@ -289,38 +271,38 @@ git push origin feature/<feature-name>
 
 ```bash
 # Run all tests
-pytest
+uv run pytest
 
 # Run unit tests only
-pytest tests/unit/
+uv run pytest tests/unit/
 
 # Run with coverage
-pytest --cov=src/daybook --cov-report=html
+uv run pytest --cov=src/daybook --cov-report=html
 
 # Run specific test file
-pytest tests/unit/test_journal.py -v
+uv run pytest tests/unit/test_journal.py -v
 
 # Run tests with specific pattern
-pytest -k "test_log_entry" -v
+uv run pytest -k "test_log_entry" -v
 ```
 
 ### 3. Code Quality
 
 ```bash
 # Format code
-black src/ tests/
+uv run black src/ tests/
 
 # Sort imports
-isort src/ tests/
+uv run isort src/ tests/
 
 # Type checking
-mypy src/
+uv run mypy src/
 
 # Linting
-flake8 src/
+uv run flake8 src/
 
 # Run all quality checks
-pre-commit run --all-files
+uv run pre-commit run --all-files
 ```
 
 ## Core Implementation Steps
@@ -667,7 +649,7 @@ daybook --verbose log "test message"
 Generate coverage report:
 
 ```bash
-pytest --cov=src/daybook --cov-report=html
+uv run pytest --cov=src/daybook --cov-report=html
 
 # View coverage report
 open htmlcov/index.html
